@@ -1,0 +1,24 @@
+# Standard Python / Jupyter files
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+*.pyd
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.python-version
+# macOS hidden files
+.DS_Store
+# Trained models & checkpoints
+*.pth
+# Logs, caches, temporary outputs
+*.log
+.cache/
+wandb/
+runs/
+lightning_logs/
