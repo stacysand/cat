@@ -17,11 +17,13 @@
       apt:
         update_cache: true
 
-    - name: Install apps
+    - name: Install ffmpeg, libcamera-apps, Python, and Flask
       apt:
         name:
           - ffmpeg
           - libcamera-apps
+          - python3
+          - python3-flask
         state: present
 
     # ── 2. MediaMTX ──────────────────────────────────────────────────────────
