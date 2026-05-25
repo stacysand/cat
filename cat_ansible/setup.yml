@@ -1,0 +1,59 @@
+---
+- name: Setup Pi streaming environment
+  hosts: pi
+  become: true  # run as sudo
+
+  vars:
+    mediamtx_version: "v1.16.3"
+    mediamtx_archive: "mediamtx_v1.16.3_linux_arm64.tar.gz"
+    mediamtx_url: "https://github.com/bluenviron/mediamtx/releases/download/{{ mediamtx_version }}/{{ mediamtx_archive }}"
+    mediamtx_dir: "/opt/mediamtx"
+
+  tasks:
+
+    # ── 1. Base system ────────────────────────────────────────────────────────
+
+    - name: Update apt cache
+      apt:
+        update_cache: true
+
+    - name: Install apps
+      apt:
+        name:
+          - ffmpeg
+          - libcamera-apps
+        state: present
+
+    # ── 2. MediaMTX ──────────────────────────────────────────────────────────
+
+    - name: Create /opt/mediamtx directory
+      file:
+        path: "{{ mediamtx_dir }}"
+        state: directory
+        mode: "0755"
+
+    - name: Download MediaMTX
+      get_url:
+        url: "{{ mediamtx_url }}"
+        dest: "/tmp/{{ mediamtx_archive }}"
+
+    - name: Extract MediaMTX
+      unarchive:
+        src: "/tmp/{{ mediamtx_archive }}"
+        dest: "{{ mediamtx_dir }}"
+        remote_src: true  # the archive is already on the Pi, not on your Mac
+
+    - name: Write mediamtx.yml config
+      copy:
+        dest: "{{ mediamtx_dir }}/mediamtx.yml"
+        content: |
+          rtspTransports: [tcp]
+          paths:
+            cam:
+              source: rpiCamera
+              rpiCameraWidth: 1280
+              rpiCameraHeight: 720
+              rpiCameraFPS: 30
+              rpiCameraBitrate: 2000000
+              rpiCameraCodec: hardwareH264
+              rpiCameraIDRPeriod: 15
