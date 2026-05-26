@@ -2,21 +2,21 @@
 - name: Setup Pi streaming environment
   hosts: pi
   become: true  # run as sudo
-
+ 
   vars:
     mediamtx_version: "v1.16.3"
     mediamtx_archive: "mediamtx_v1.16.3_linux_arm64.tar.gz"
     mediamtx_url: "https://github.com/bluenviron/mediamtx/releases/download/{{ mediamtx_version }}/{{ mediamtx_archive }}"
     mediamtx_dir: "/opt/mediamtx"
-
+ 
   tasks:
-
+ 
     # ── 1. Base system ────────────────────────────────────────────────────────
-
+ 
     - name: Update apt cache
       apt:
         update_cache: true
-
+ 
     - name: Install ffmpeg, libcamera-apps, Python, and Flask
       apt:
         name:
@@ -25,26 +25,26 @@
           - python3
           - python3-flask
         state: present
-
+ 
     # ── 2. MediaMTX ──────────────────────────────────────────────────────────
-
+ 
     - name: Create /opt/mediamtx directory
       file:
         path: "{{ mediamtx_dir }}"
         state: directory
         mode: "0755"
-
+ 
     - name: Download MediaMTX
       get_url:
         url: "{{ mediamtx_url }}"
         dest: "/tmp/{{ mediamtx_archive }}"
-
+ 
     - name: Extract MediaMTX
       unarchive:
         src: "/tmp/{{ mediamtx_archive }}"
         dest: "{{ mediamtx_dir }}"
-        remote_src: true  # the archive is already on the Pi, not on your Mac
-
+        remote_src: true
+ 
     - name: Write mediamtx.yml config
       copy:
         dest: "{{ mediamtx_dir }}/mediamtx.yml"
@@ -59,3 +59,27 @@
               rpiCameraBitrate: 2000000
               rpiCameraCodec: hardwareH264
               rpiCameraIDRPeriod: 15
+ 
+    # ── 3. Buzzer HTTP server ─────────────────────────────────────────────────
+ 
+    - name: Add stacy to gpio group
+      user:
+        name: stacy
+        groups: gpio
+        append: true
+ 
+    - name: Copy buzzer-server systemd unit file
+      copy:
+        src: files/buzzer-server.service
+        dest: /etc/systemd/system/buzzer-server.service
+        owner: root
+        group: root
+        mode: '0644'
+ 
+    - name: Enable and start buzzer-server
+      systemd:
+        name: buzzer-server
+        enabled: true
+        state: started
+        daemon_reload: true
+ 

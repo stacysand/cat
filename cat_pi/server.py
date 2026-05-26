@@ -5,7 +5,7 @@ app = Flask(__name__)
 
 @app.route("/buzz")
 def buzz():
-    subprocess.run(["python3", "buzzer.py"])
+    subprocess.run(["python3", "/home/stacy/buzzer.py"])
     return "Buzzing!", 200
 
 if __name__ == "__main__":

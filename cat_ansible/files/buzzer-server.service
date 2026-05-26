@@ -1,0 +1,14 @@
+[Unit]
+Description=Buzzer HTTP Server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /home/stacy/server.py
+Restart=always
+RestartSec=5
+User=stacy
+SupplementaryGroups=gpio
+WorkingDirectory=/home/stacy
+
+[Install]
+WantedBy=multi-user.target
