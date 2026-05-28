@@ -1,0 +1,81 @@
+---
+- name: Deploy cat detection to Pi 5
+  hosts: pi5
+  become: true  # run as sudo
+ 
+  vars:
+    app_dir: /home/stacy/cat_pi5
+    venv_dir: /home/stacy/cat_pi5/venv
+    ansible_python_interpreter: /usr/bin/python3.12
+ 
+  tasks:
+ 
+    # ── 1. System dependencies ────────────────────────────────────────────────
+ 
+    - name: Update apt cache
+      apt:
+        update_cache: true
+ 
+    - name: Install system packages required by OpenCV
+      apt:
+        name:
+          - python3-pip
+          - python3-venv
+          - libgl1           # required by opencv-python-headless
+          - libglib2.0-0     # required by opencv-python-headless
+        state: present
+ 
+    # ── 2. App directory ──────────────────────────────────────────────────────
+ 
+    - name: Create app directory
+      file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: stacy
+        mode: "0755"
+ 
+    # ── 3. Python environment ─────────────────────────────────────────────────
+ 
+    - name: Create Python virtualenv
+      command: python3 -m venv {{ venv_dir }}
+      args:
+        creates: "{{ venv_dir }}/bin/activate"  # skip if venv already exists
+ 
+    - name: Install Python dependencies
+      pip:
+        requirements: "{{ app_dir }}/requirements.txt"
+        virtualenv: "{{ venv_dir }}"
+ 
+    # ── 4. Systemd service ────────────────────────────────────────────────────
+ 
+    - name: Copy cat_pi5 systemd unit file
+      copy:
+        dest: /etc/systemd/system/cat_pi5.service
+        owner: root
+        group: root
+        mode: "0644"
+        content: |
+          [Unit]
+          Description=Cat Detection on Pi 5
+          After=network-online.target
+          Wants=network-online.target
+ 
+          [Service]
+          Type=simple
+          User=stacy
+          WorkingDirectory={{ app_dir }}
+          ExecStart={{ venv_dir }}/bin/python cat_pi5.py
+          Restart=on-failure
+          RestartSec=5
+          StandardOutput=journal
+          StandardError=journal
+ 
+          [Install]
+          WantedBy=multi-user.target
+ 
+    - name: Enable and start cat_pi5 service
+      systemd:
+        name: cat_pi5
+        enabled: true
+        state: restarted
+        daemon_reload: true

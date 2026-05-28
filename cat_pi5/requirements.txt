@@ -1,0 +1,4 @@
+ultralytics
+opencv-python-headless  # instead of opencv-python
+requests
+numpy
