@@ -1,14 +1,13 @@
 import cv2  # Open Source Computer Vision Library (OpenCV) - for working with video, images, display
 import threading  # Python standard library for separate threads
-import signal  # to handle shutdown signals from systemd or Ctrl+C
 from ultralytics import YOLO  # CV model
 from actions import trigger_function
 from save_frame import save_debug_frame
 import numpy as np
 import requests  # for Flask on Pi >> buzzer
- 
+
 # -------------------------------------  Reader Thread  ------------------------------------------------------
- 
+
 class StreamReader:  # continuously reads frames in a background thread, holds only the latest frame
     
     def __init__(self, url):  # url = "rtsp://..." (defined below)
@@ -22,7 +21,7 @@ class StreamReader:  # continuously reads frames in a background thread, holds o
         self.lock = threading.Lock()  # (also called Mutex (mutual exclusion))
         # flag to control the reading loop
         self.running = False  # initially set to False → reader thread should NOT run yet. when we call start(), this will change to True
- 
+
     # create a daemon thread
     def start(self):
         # set running flag to True:
@@ -32,7 +31,7 @@ class StreamReader:  # continuously reads frames in a background thread, holds o
         # start daemon thread:
         self._thread.start()  # after this line, 2 things run at the same time: main thread and background thread running "_read_loop"
         return self  # just pattern to write object and method in one line (like "StreamReader().start()")
- 
+
     # infinite loop that keeps reading frames
     def _read_loop(self):
         while self.running:
@@ -48,14 +47,14 @@ class StreamReader:  # continuously reads frames in a background thread, holds o
             with self.lock:
                 # get the frame:
                 self.frame = frame
- 
+
     # get copy of the frame
     def get_frame(self):
         # acquire lock:
         with self.lock:
             # copy the frame
             return self.frame.copy() if self.frame is not None else None
- 
+
     # stop the thread reader
     def stop(self):
         # set running flag to False:
@@ -64,13 +63,13 @@ class StreamReader:  # continuously reads frames in a background thread, holds o
         self._thread.join()
         # release the video:
         self.cap.release()
- 
- 
+
+
 # -------------------------------------------  Main Thread  --------------------------------------------------------------
- 
+
 # load model
 model = YOLO('yolov8n.pt')  # Nano is the smallest v. Alternatives yolov8m.pt, yolov8l.pt
- 
+
 # ROI coordinates
 roi_table = np.array([
     [500, 380],
@@ -78,47 +77,55 @@ roi_table = np.array([
     [750, 710],
     [150, 710],
 ], dtype=np.int32)  # top-left, top-right, bottom-right, bottom-left
- 
+
 # stream
 stream = StreamReader("rtsp://192.168.1.173:8554/cam").start()  # # connect to the network stream
 if not stream.cap.isOpened():
     print('Error: could not open the stream')
     exit()
 print('Streaming')
- 
-# shutdown flag — set to True by signal handler, which ends the loop cleanly
-shutdown = False
- 
-def _handle_signal(sig, frame):
-    global shutdown
-    shutdown = True
- 
-signal.signal(signal.SIGTERM, _handle_signal)  # sent by systemd on service stop
-signal.signal(signal.SIGINT, _handle_signal)   # sent by Ctrl+C
- 
+
 # loop continuously to read frames
-while not shutdown:
+while True:  # runs forever until q
     frame = stream.get_frame()
     if frame is None: 
         continue
- 
+
     # create copy to draw on
     frame_detect = frame.copy()
- 
+
     # process table roi
     x1_t, y1_t, x2_t, y2_t = roi_table
- 
+
     # mask roi and run detection on full frame
     masked = frame.copy()
     cv2.fillPoly(masked, [roi_table], 0)
     results = model(masked)
- 
+
     # check for cat or dog
     detected_classes = [model.names[int(cls)] for cls in results[0].boxes.cls]
-    if any(c in ('cat', 'dog') for c in detected_classes):
-    # if any(c in ('person') for c in detected_classes):  # for check only
-        save_debug_frame(results, frame_detect)
+    # if any(c in ('cat', 'dog') for c in detected_classes):
+    if any(c in ('person') for c in detected_classes):  # for check only
         trigger_function()
- 
+        save_debug_frame(results, frame_detect)
+
+    # draw detection boxes and labels on the frame
+    frame_detect = results[0].plot()
+
+    # draw the table roi
+    cv2.polylines(frame_detect, [roi_table], isClosed=True, color=(255, 0, 0), thickness=2)  # top-left & bottom-right corners; (B,G,R); thickness=2
+    # add roi label
+    # cv2.putText(frame, 'Table', (roi_table[0], roi_table[1] - 10),
+    #           cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 2)
+
+    # display the frame in a window
+    cv2.imshow('ROI Detection', frame_detect)  # prepare title + img to display (new frame each itteration)
+
+    # show window (wait 1 ms for a key press. if user presses q, break loop and close)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        print("Closing...")
+        break
+
 stream.stop()
+cv2.destroyAllWindows()
 print("Done")
