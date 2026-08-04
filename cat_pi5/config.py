@@ -1,5 +1,6 @@
 import numpy as np
 
+
 # --------------------  detection  --------------------
 
 # model for detection
@@ -16,6 +17,7 @@ ROI = np.array([
 # target
 TARGET_CLASSES = ('cat', 'dog')  
 #TARGET_CLASSES = ('person',) # for testing
+
 
 # --------------------  triggered functions  --------------------
 
@@ -35,6 +37,7 @@ HTTP_ADDRESS = "http://192.168.1.173:5000/buzz"
 # trigger_buzzer: sent request confirmation printing
 HTTP_PRINT = "THE CAT IS IN THE AREA! Sent buzzling requiest to Pi2."
 
+
 # --------------------  stream  --------------------
 
 # streaming RTSP
@@ -45,3 +48,18 @@ STALE_TIMEOUT = 8
 
 # consecutive failed reconnect attempts before give up and let systemd restart
 MAX_RECONNECTS = 5
+
+
+# --------------------  motion check (px diff)  --------------------
+
+# blur kernel to smooth sensor noise before diffing (must be odd numbers)
+BLUR_KERNEL = (21, 21)
+
+# per-pixel brightness change (0-255) to count as "changed"
+DIFF_THRESHOLD = 25
+
+# how many changed pixels count as real motion, not noise
+MIN_CHANGED_PXS = 500
+
+# seconds of no motion before dropping into idle mode
+IDLE_TIMEOUT = 10.0

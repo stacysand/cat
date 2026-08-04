@@ -7,6 +7,7 @@ from stream_manager import StreamManager
 from detection import detect_objects
 from trigger_buzzer import trigger_buzzer_pi2_via_server
 from save_frames import save_detections_and_cleanframe
+from motion_check import find_px_diff_between_frames
  
  
 def main():
@@ -28,9 +29,14 @@ def main():
             print(f"[main] {e}, exiting so systemd restarts us")
             sys.exit(1)
  
+        # check for usable frame
         if frame is None:
             continue
- 
+
+        # check for motion (px diff found >> activate YOLO)
+        if not find_px_diff_between_frames(frame):  # stop if not True = False:
+            continue
+
         # run detection
         frame_original, frame_roi, results, target = detect_objects(frame)
         # trigger functions
