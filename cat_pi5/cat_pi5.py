@@ -1,6 +1,7 @@
 import sys  # for a clean non-zero exit so systemd can restart the program
- 
-from config import RTSP_URL
+import time  # for sleep timer
+
+from config import RTSP_URL, IDLE_POLL_INTERVAL
 from shutdown import ShutdownHandler
 from stream_reader import StreamReader
 from stream_manager import StreamManager
@@ -35,6 +36,7 @@ def main():
 
         # check for motion (px diff found >> activate YOLO)
         if not find_px_diff_between_frames(frame):  # stop if not True = False:
+            time.sleep(IDLE_POLL_INTERVAL)
             continue
 
         # run detection

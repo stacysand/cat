@@ -63,3 +63,6 @@ MIN_CHANGED_PXS = 500
 
 # seconds of no motion before dropping into idle mode
 IDLE_TIMEOUT = 10.0
+
+# how long to wait until compare the next frame
+IDLE_POLL_INTERVAL = 1 / 15  # in sec: ~0.067s = 67 ms (~15Hz)
