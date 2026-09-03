@@ -7,7 +7,7 @@ from stream_reader import StreamReader
 from stream_manager import StreamManager
 from detection import detect_objects
 from trigger_buzzer import trigger_buzzer_pi2_via_server
-from save_frames import save_detections_and_cleanframe
+from save_positives import save_detections_and_cleanframe
 from motion_check import find_px_diff_between_frames
  
  
@@ -32,15 +32,17 @@ def main():
  
         # check for usable frame
         if frame is None:
+            time.sleep(IDLE_POLL_INTERVAL)
             continue
 
         # check for motion (px diff found >> activate YOLO)
-        if not find_px_diff_between_frames(frame):  # stop if not True = False:
+        if not find_px_diff_between_frames(frame):  # stop if (not True) = False:
             time.sleep(IDLE_POLL_INTERVAL)
             continue
 
         # run detection
         frame_original, frame_roi, results, target = detect_objects(frame)
+
         # trigger functions
         if target:
             save_detections_and_cleanframe(frame_original, frame_roi, results)

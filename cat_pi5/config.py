@@ -19,15 +19,21 @@ TARGET_CLASSES = ('cat', 'dog')
 #TARGET_CLASSES = ('person',) # for testing
 
 
+# --------------------  detection logs  ---------------------
+
+# detection_logs: where the logs get saved (both positiv and negativ)
+DIR_DETECTION_LOGS = "./detections/logs" 
+
+
 # --------------------  triggered functions  --------------------
 
-# save_frames and trigger_buzzer: how long to wait before next round
+# save_positives and trigger_buzzer: how long to wait before next round
 COOLDOWN_SECONDS = 3.0
 
-# save_frames: how many to keep so the Pi's SD card doesn't slowly fill up
+# save_positives: how many to keep so the Pi's SD card doesn't slowly fill up
 MAX_SAVED_FRAMES = 300
 
-# save_frames: where the frames get saved
+# save_positives: where the frames get saved
 DIR_DETECTIONS = "./detections"
 DIR_CLEAN_FRAMES = "./detections/clean_frames"
 

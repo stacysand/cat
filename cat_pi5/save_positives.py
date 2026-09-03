@@ -4,6 +4,7 @@ from datetime import datetime
 import time
 
 from config import COOLDOWN_SECONDS, MAX_SAVED_FRAMES, DIR_DETECTIONS, DIR_CLEAN_FRAMES
+from detection_logs import results_to_detections, log_event
 
 
 # paths
@@ -48,3 +49,6 @@ def save_detections_and_cleanframe(frame_original, frame_roi, results):
     for old_file in files_clean_frames[:-MAX_SAVED_FRAMES]:
         os.remove(old_file)
 
+    # log prediction numbers next to the images to sort and filter without opening every jpg
+    detections = results_to_detections(results)
+    log_event("detection", path_detections, detections)
